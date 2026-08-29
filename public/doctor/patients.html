@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedScribe AI — Patients</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">M</div><div>MedScribe AI</div></div>
+    <a class="nav-link" href="/doctor/dashboard.html"><span class="nav-icon">🩺</span>Dashboard</a>
+    <a class="nav-link active" href="/doctor/patients.html"><span class="nav-icon">👥</span>Patients</a>
+    <a class="nav-link" href="/doctor/consultations.html"><span class="nav-icon">📋</span>Consultations</a>
+    <div class="sidebar-footer">
+      <div class="avatar-circle" id="doctorInitials">DV</div>
+      <div><div style="font-weight:600;" id="doctorName">Doctor</div><div class="text-muted" style="font-size:11px;">Signed in</div></div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">Patients</h1>
+        <div class="page-sub">All patients in the system</div>
+      </div>
+    </div>
+
+    <div id="patientList"></div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+Session.requireRole("doctor");
+function logout() { Session.clear(); window.location.href = "/login.html"; }
+
+(async function() {
+  const user = Session.user();
+  document.getElementById("doctorName").textContent = user.name;
+  document.getElementById("doctorInitials").textContent = initials(user.name);
+
+  const patients = await Api.get("/patients");
+  document.getElementById("patientList").innerHTML = patients.map((p) => `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+        <div>
+          <div style="font-weight:700; font-size:15px;">${p.name}</div>
+          <div class="text-muted" style="font-size:13px;">${p.gender}, DOB ${p.dob} · ${p.email}</div>
+        </div>
+        <a class="btn btn-secondary" href="/doctor/dashboard.html">Start Consultation</a>
+      </div>
+      <div class="grid-2" style="margin-top:14px;">
+        <div>
+          <div class="soap-label">Allergies</div>
+          <div style="font-size:13px; margin-top:4px;">
+            ${p.allergies.length ? p.allergies.map(a => `<span class="badge badge-red">${a}</span>`).join(" ") : '<span class="text-muted">None recorded</span>'}
+          </div>
+        </div>
+        <div>
+          <div class="soap-label">Current Medications</div>
+          <div style="font-size:13px; margin-top:4px;">
+            ${p.currentMedications.length ? p.currentMedications.map(m => `${m.medicine} ${m.dosage} (${m.frequency})`).join("<br>") : '<span class="text-muted">None recorded</span>'}
+          </div>
+        </div>
+      </div>
+      <div style="margin-top:12px;">
+        <div class="soap-label">Medical History</div>
+        <div style="font-size:13px; margin-top:4px;">
+          ${p.medicalHistory.length ? p.medicalHistory.map(h => `<div style="margin-bottom:4px;"><b>${h.date}</b> — ${h.note}</div>`).join("") : '<span class="text-muted">No history recorded</span>'}
+        </div>
+      </div>
+    </div>
+  `).join("") || '<div class="empty-state">No patients found.</div>';
+})();
+</script>
+</body>
+</html>

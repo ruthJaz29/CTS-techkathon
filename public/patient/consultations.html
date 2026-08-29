@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedScribe — My Consultations</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">M</div><div>MedScribe</div></div>
+    <a class="nav-link" href="/patient/home.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link active" href="/patient/consultations.html"><span class="nav-icon">📋</span>My Consultations</a>
+    <a class="nav-link" href="/patient/prescriptions.html"><span class="nav-icon">💊</span>Prescriptions</a>
+    <div class="sidebar-footer">
+      <div class="avatar-circle" id="patientInitials">SC</div>
+      <div><div style="font-weight:600;" id="patientName">Patient</div><div class="text-muted" style="font-size:11px;">Signed in</div></div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">My Consultations</h1>
+        <div class="page-sub">Doctor-approved consultation summaries only</div>
+      </div>
+    </div>
+    <div id="list"></div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+Session.requireRole("patient");
+function logout() { Session.clear(); window.location.href = "/login.html"; }
+
+(async function() {
+  const user = Session.user();
+  document.getElementById("patientName").textContent = user.name;
+  document.getElementById("patientInitials").textContent = initials(user.name);
+
+  const consults = await Api.get(`/consultations?patientId=${user.id}&status=approved`);
+  consults.sort((a, b) => new Date(b.approvedAt) - new Date(a.approvedAt));
+
+  document.getElementById("list").innerHTML = consults.length ? consults.map((c) => {
+    const soap = c.soap || {};
+    return `
+    <div class="card">
+      <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+        <div style="font-weight:700;">${c.name}</div>
+        <span class="badge badge-green">✓ Doctor-Approved · ${fmtDate(c.approvedAt)}</span>
+      </div>
+      <div class="soap-section"><div class="soap-label">Subjective</div><div class="soap-text">${soap.subjective || "-"}</div></div>
+      <div class="soap-section"><div class="soap-label">Assessment</div><div class="soap-text">${soap.assessment || "-"}</div></div>
+      <div class="soap-section"><div class="soap-label">Plan</div><div class="soap-text">${soap.plan || "-"}</div></div>
+    </div>
+  `;
+  }).join("") : '<div class="card"><div class="empty-state">No approved consultations yet. Your doctor will publish a summary here once a consultation is reviewed.</div></div>';
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,268 @@
+{
+  "doctors": [
+    {
+      "id": "doc1",
+      "name": "Dr. Eleanor Vance",
+      "email": "eleanor.vance@medscribe.ai",
+      "password": "doctor123",
+      "specialty": "General Physician"
+    }
+  ],
+  "patients": [
+    {
+      "id": "pat1",
+      "name": "Sarah J. Thompson",
+      "email": "sarah.thompson@example.com",
+      "password": "patient123",
+      "dob": "1981-09-12",
+      "gender": "F",
+      "allergies": [
+        "Aspirin"
+      ],
+      "currentMedications": [
+        {
+          "medicine": "Lisinopril",
+          "dosage": "10mg",
+          "frequency": "1 daily"
+        },
+        {
+          "medicine": "Atorvastatin",
+          "dosage": "20mg",
+          "frequency": "1 daily"
+        },
+        {
+          "medicine": "Metformin",
+          "dosage": "500mg",
+          "frequency": "2 daily"
+        }
+      ],
+      "medicalHistory": [
+        {
+          "date": "2023-10-15",
+          "note": "Routine checkup. Blood pressure well controlled. No new complaints."
+        },
+        {
+          "date": "2022-05-02",
+          "note": "Diagnosed with Type 2 Diabetes. Started on Metformin."
+        }
+      ]
+    },
+    {
+      "id": "pat2",
+      "name": "John Miller",
+      "email": "john.miller@example.com",
+      "password": "patient123",
+      "dob": "1990-03-22",
+      "gender": "M",
+      "allergies": [
+        "Penicillin"
+      ],
+      "currentMedications": [],
+      "medicalHistory": [
+        {
+          "date": "2024-01-10",
+          "note": "Seasonal allergy symptoms. Prescribed antihistamines."
+        }
+      ]
+    }
+  ],
+  "appointments": [
+    {
+      "id": "appt1",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "date": "2026-11-02",
+      "time": "10:00 AM",
+      "type": "Virtual Consult"
+    }
+  ],
+  "consultations": [
+    {
+      "id": "cons_edc19eb7d0ba",
+      "name": "chest pain",
+      "patientId": "pat2",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-29T02:37:47.393Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_edc19eb7d0ba_1787971085466.webm",
+      "error": "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
+    },
+    {
+      "id": "cons_53a9463a9162",
+      "name": "chest pain",
+      "patientId": "pat2",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-29T02:40:23.610Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_53a9463a9162_1787971239333.webm",
+      "error": "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent: [404 Not Found] This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API."
+    },
+    {
+      "id": "cons_9228d4b9263b",
+      "name": "cest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-29T02:44:15.341Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_9228d4b9263b_1787971474305.webm",
+      "error": "[GoogleGenerativeAI Error]: Error fetching from https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent: [404 Not Found] This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.6-flash for the latest features and improvements. We recommend you to use the Interactions API."
+    },
+    {
+      "id": "cons_ebab6ce21e85",
+      "name": "chest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-08-29T02:46:14.036Z",
+      "transcript": "Doctor: The patient was admitted due to chest pain and is having three major blocks and I have identified like I've planned to keep stent in two blocks and do medication for the other one minor block.",
+      "soap": {
+        "subjective": "Patient was admitted presenting with chest pain.",
+        "objective": "Cardiac evaluation revealed three vessel blockages (two major blocks and one minor block).",
+        "assessment": "Coronary artery disease with severe stenosis in two major vessels and mild/moderate stenosis in one minor vessel.",
+        "plan": "- Percutaneous coronary intervention (stenting) for two major coronary blocks.\n- Medical therapy for the remaining minor block."
+      },
+      "prescriptionDraft": [],
+      "relevantHistory": [
+        "2022-05-02: 'Diagnosed with Type 2 Diabetes. Started on Metformin.' — Type 2 Diabetes is a major risk factor for coronary artery disease.",
+        "2023-10-15: 'Routine checkup. Blood pressure well controlled. No new complaints.' — Documents baseline cardiovascular/hypertension management prior to current admission."
+      ],
+      "contextNote": "Patient with Type 2 Diabetes and HTN (on Metformin, Lisinopril, Atorvastatin) now presents with severe CAD requiring PCI. CRITICAL: Documented Aspirin allergy must be considered when prescribing post-stenting antiplatelet therapy.",
+      "safetyAlerts": [
+        {
+          "severity": "medium",
+          "type": "Missing Information",
+          "message": "No vital signs (e.g., blood pressure, heart rate) are recorded in the Objective section for a patient presenting with chest pain."
+        },
+        {
+          "severity": "medium",
+          "type": "Missing Information",
+          "message": "The Plan references 'Medical therapy' for the remaining minor block, but no specific medications, dosages, or draft prescriptions are provided."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_ebab6ce21e85_1787971592907.webm"
+    },
+    {
+      "id": "cons_1cdccea499a0",
+      "name": "chest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-08-29T02:54:44.246Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_d845c197e97a",
+      "name": "chest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-08-29T02:55:04.697Z",
+      "transcript": "Doctor: The patient was admitted due to chest pain and during examination three blocks in the heart were identified out of which two are major blocks and one is a minor one. So I have recommended keeping two stents in the two major blocks and then maintaining the other stent using medicine temporarily for now.",
+      "soap": {
+        "subjective": "Patient was admitted presenting with chest pain.",
+        "objective": "Cardiac evaluation identified three heart blockages: two major blockages and one minor blockage.",
+        "assessment": "Coronary artery disease presenting with three blockages (two major, one minor).",
+        "plan": "1. Recommended placement of two stents for the two major blockages.\n2. Initiate temporary medical management for the remaining minor blockage."
+      },
+      "prescriptionDraft": [],
+      "relevantHistory": [
+        "2022-05-02: 'Diagnosed with Type 2 Diabetes. Started on Metformin.' - Type 2 Diabetes is a major cardiovascular risk factor directly related to the development of coronary artery disease.",
+        "2023-10-15: 'Routine checkup. Blood pressure well controlled.' - Indicates ongoing management of hypertension (Lisinopril), another key risk factor for CAD."
+      ],
+      "contextNote": "Patient with T2D and HTN presents with CAD requiring stenting; note critical Aspirin allergy when planning post-PCI antiplatelet therapy.",
+      "safetyAlerts": [
+        {
+          "severity": "medium",
+          "type": "missing_information",
+          "message": "No vital signs (e.g., blood pressure, heart rate) are recorded in the objective section for a patient presenting with chest pain."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_information",
+          "message": "The plan calls to initiate 'temporary medical management' for the minor blockage, but no specific medication, dosage, or draft prescription is provided."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_d845c197e97a_1787972129352.webm"
+    },
+    {
+      "id": "cons_fd13c8897fd8",
+      "name": "chest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-08-29T03:59:15.187Z",
+      "transcript": "Patient: Doctor, enakku left knee la pain irukku. 3 days a. Nadakkampodhu romba kashtama irukku.\nDoctor: 3 days a? Evvalavo perusu? Edhavadhu fall aacha, injury edhavadhu?\nPatient: Illa doctor, edhuvum fall aagaliye. Suddenly dhan start aachu. Morning erundhaachu knee stiff a irundhuchu, pinnadi pain start aachu.\nDoctor: Okay. Pain evvalavo level? Mild a? Illa walk pannumbodhu really sharp a irukka?\nPatient: Walk pannumbodhu romba sharp a irukku doctor. Steps yerumbodhu especially. Rest pannumbodhu konjam better.\nDoctor: Swelling edhavadhu irukka? Knee la touch pannumbodhu warm a feel aaguma?\nPatient: Konjam swelling irukku doctor, but warm nu theriyala.\nDoctor: Sari. Neenga edhavadhu blood thinners or arthritis medication already edhavadhu use panringala?\nPatient: Illa doctor, edhuvum illa. Adhu mattum first time.\nDoctor: Okay, don't worry. Idhu konjam looks like a mild ligament strain illa early inflammation. Naan oru X-ray recommend pandren fracture illa nu confirm panna, and konjam anti-inflammatory medicine kodukkren. Rest pannunga, ice pack podunga, 3-4 days ku over a walk pannadhinga.\nPatient: Sari doctor, thanks a lot.",
+      "soap": {
+        "subjective": "Patient presents with left knee pain lasting for 3 days, causing significant difficulty walking. Pain started suddenly following morning knee stiffness without any prior trauma or fall. Pain is described as sharp during weight-bearing (walking and climbing stairs) and improves with rest. Patient reports mild swelling, unsure of local warmth. No past history of similar episodes. Denies current use of blood thinners or arthritis medications.",
+        "objective": "Mild swelling noted over the left knee per patient report. Physical exam and vital signs pending doctor evaluation.",
+        "assessment": "1. Left knee pain - Suspected mild ligament strain vs. early joint inflammation.\n2. Rule out fracture.",
+        "plan": "1. X-ray of left knee to rule out fracture.\n2. Prescribe oral anti-inflammatory medication.\n3. Rest and apply ice packs to the affected area.\n4. Avoid excessive walking/exertion for 3 to 4 days."
+      },
+      "prescriptionDraft": [
+        {
+          "medicine": "Anti-inflammatory medication (e.g., NSAID)",
+          "dosage": "As prescribed",
+          "frequency": "As directed",
+          "duration": "3-5 days",
+          "quantity": "As directed",
+          "instructions": "Take after meals for knee pain and inflammation relief."
+        }
+      ],
+      "relevantHistory": [],
+      "contextNote": "No notable history related to knee pain was found. Note that the patient has a documented Aspirin allergy to consider before prescribing anti-inflammatories.",
+      "safetyAlerts": [
+        {
+          "severity": "high",
+          "type": "allergy_conflict",
+          "message": "Draft prescription recommends an anti-inflammatory/NSAID, which carries a high risk of cross-reactivity with the patient's documented Aspirin allergy."
+        },
+        {
+          "severity": "medium",
+          "type": "drug_interaction",
+          "message": "Prescribing NSAIDs to a patient taking Lisinopril can increase the risk of renal impairment and diminish the efficacy of antihypertensive therapy."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_information",
+          "message": "Draft prescription is incomplete; specific medication name, exact dosage, frequency, and quantity are missing."
+        },
+        {
+          "severity": "low",
+          "type": "missing_information",
+          "message": "Vital signs and completed physical exam findings are missing from the Objective section."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_fd13c8897fd8_1787976045430.webm"
+    }
+  ]
+}

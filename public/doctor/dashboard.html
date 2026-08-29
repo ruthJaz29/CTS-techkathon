@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedScribe AI — Doctor Dashboard</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-shell">
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">M</div><div>MedScribe AI</div></div>
+    <a class="nav-link active" href="/doctor/dashboard.html"><span class="nav-icon">🩺</span>Dashboard</a>
+    <a class="nav-link" href="/doctor/patients.html"><span class="nav-icon">👥</span>Patients</a>
+    <a class="nav-link" href="/doctor/consultations.html"><span class="nav-icon">📋</span>Consultations</a>
+    <div class="sidebar-footer">
+      <div class="avatar-circle" id="doctorInitials">DV</div>
+      <div>
+        <div style="font-weight:600;" id="doctorName">Doctor</div>
+        <div class="text-muted" style="font-size:11px;">Signed in</div>
+      </div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <!-- ================= MAIN ================= -->
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">New Consultation</h1>
+        <div class="page-sub">Record the consultation — MedScribe drafts the note for your review.</div>
+      </div>
+    </div>
+
+    <!-- Step 1: pick patient + name the recording -->
+    <div class="card" id="setupCard">
+      <div class="card-title">1. Start a Consultation</div>
+      <div class="grid-2">
+        <div class="field">
+          <label>Patient</label>
+          <select id="patientSelect"></select>
+        </div>
+        <div class="field">
+          <label>Consultation name</label>
+          <input type="text" id="consultName" placeholder="e.g. Chest pain follow-up">
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <!-- Recorder + live transcript -->
+      <div class="card">
+        <div class="card-title">
+          <span>Live Recording</span>
+          <span id="recStatusBadge" class="badge badge-gray">Idle</span>
+        </div>
+        <div class="recorder-box">
+          <button class="mic-btn" id="micBtn" onclick="toggleRecording()">🎙️</button>
+          <div class="recorder-status" id="recStatus">Select a patient, name the consult, then tap to record</div>
+          <div class="recorder-timer" id="recTimer" style="margin-top:6px;"></div>
+        </div>
+        <audio id="audioPreview" controls style="width:100%; margin-top:10px; display:none;"></audio>
+      </div>
+
+      <!-- Patient context / history agent output -->
+      <div class="card">
+        <div class="card-title">Patient Snapshot</div>
+        <div id="patientSnapshot" class="text-muted" style="font-size:13px;">Select a patient to see history & allergies.</div>
+      </div>
+    </div>
+
+    <!-- Processing indicator -->
+    <div class="card" id="processingCard" style="display:none; text-align:center;">
+      <span class="spinner" style="border-top-color: var(--blue); border-color:#dbeafe; width:22px; height:22px;"></span>
+      <div style="margin-top:10px; font-weight:600;">Running AI agent pipeline…</div>
+      <div class="text-muted" style="font-size:12px; margin-top:4px;" id="processingStep">Documentation Agent — transcribing & drafting SOAP note</div>
+    </div>
+
+    <!-- AI results / review -->
+    <div id="resultsArea" style="display:none;">
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-title">
+            <span>Transcript</span>
+            <span class="badge badge-blue">Documentation Agent</span>
+          </div>
+          <div id="transcriptBox" class="soap-text" style="max-height:220px; overflow-y:auto;"></div>
+        </div>
+
+        <div class="card">
+          <div class="card-title">
+            <span>AI-Generated SOAP Note</span>
+            <span class="badge badge-amber">Requires Doctor Review</span>
+          </div>
+          <div id="soapBox"></div>
+        </div>
+      </div>
+
+      <div class="card" id="historyCard">
+        <div class="card-title">
+          <span>Relevant History</span>
+          <span class="badge badge-blue">History Agent</span>
+        </div>
+        <div id="historyContent"></div>
+      </div>
+
+      <div class="card" id="safetyCard">
+        <div class="card-title">
+          <span>Safety Review Alerts</span>
+          <span class="badge badge-blue">Safety Agent</span>
+        </div>
+        <div id="safetyContent"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span>Prescription Draft</span>
+          <span class="badge badge-amber">AI Draft — Doctor Verification Required</span>
+        </div>
+        <div style="overflow-x:auto;">
+          <table id="rxTable">
+            <thead>
+              <tr><th>Medicine</th><th>Dosage</th><th>Frequency</th><th>Duration</th><th>Qty</th><th>Instructions</th></tr>
+            </thead>
+            <tbody id="rxBody"></tbody>
+          </table>
+        </div>
+        <div class="empty-state" id="rxEmpty" style="display:none;">No medication was drafted for this consultation.</div>
+      </div>
+
+      <div class="card" style="display:flex; gap:10px; justify-content:flex-end;">
+        <button class="btn btn-secondary" onclick="saveEdits()">Save Edits</button>
+        <button class="btn btn-success" onclick="approveConsultation()" id="approveBtn">✓ Approve Consultation &amp; Send Notes</button>
+      </div>
+    </div>
+
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script src="/doctor/js/dashboard.js"></script>
+</body>
+</html>

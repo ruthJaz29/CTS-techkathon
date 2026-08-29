@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedScribe — Prescriptions</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">M</div><div>MedScribe</div></div>
+    <a class="nav-link" href="/patient/home.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="/patient/consultations.html"><span class="nav-icon">📋</span>My Consultations</a>
+    <a class="nav-link active" href="/patient/prescriptions.html"><span class="nav-icon">💊</span>Prescriptions</a>
+    <div class="sidebar-footer">
+      <div class="avatar-circle" id="patientInitials">SC</div>
+      <div><div style="font-weight:600;" id="patientName">Patient</div><div class="text-muted" style="font-size:11px;">Signed in</div></div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title">Current Prescriptions</h1>
+        <div class="page-sub">Only medications approved by your doctor appear here</div>
+      </div>
+      <button class="btn btn-secondary" onclick="window.print()">Download / Print</button>
+    </div>
+
+    <div class="card">
+      <table>
+        <thead><tr><th>Medicine</th><th>Dosage</th><th>Frequency</th></tr></thead>
+        <tbody id="rxBody"></tbody>
+      </table>
+      <div class="empty-state" id="empty" style="display:none;">No prescriptions on file yet.</div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+Session.requireRole("patient");
+function logout() { Session.clear(); window.location.href = "/login.html"; }
+
+(async function() {
+  const user = Session.user();
+  document.getElementById("patientName").textContent = user.name;
+  document.getElementById("patientInitials").textContent = initials(user.name);
+
+  const patient = await Api.get(`/patients/${user.id}`);
+  document.getElementById("empty").style.display = patient.currentMedications.length ? "none" : "block";
+  document.getElementById("rxBody").innerHTML = patient.currentMedications.map((m) => `
+    <tr><td>${m.medicine}</td><td>${m.dosage}</td><td>${m.frequency}</td></tr>
+  `).join("");
+})();
+</script>
+</body>
+</html>

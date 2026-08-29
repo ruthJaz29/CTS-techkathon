@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>MedScribe — Patient Portal</title>
+<link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand"><div class="brand-logo">M</div><div>MedScribe</div></div>
+    <a class="nav-link active" href="/patient/home.html"><span class="nav-icon">🏠</span>Home</a>
+    <a class="nav-link" href="/patient/consultations.html"><span class="nav-icon">📋</span>My Consultations</a>
+    <a class="nav-link" href="/patient/prescriptions.html"><span class="nav-icon">💊</span>Prescriptions</a>
+    <div class="sidebar-footer">
+      <div class="avatar-circle" id="patientInitials">SC</div>
+      <div><div style="font-weight:600;" id="patientName">Patient</div><div class="text-muted" style="font-size:11px;">Signed in</div></div>
+      <button class="logout-btn" onclick="logout()">Log out</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="topbar">
+      <div>
+        <h1 class="page-title" id="welcomeMsg">Welcome back!</h1>
+        <div class="page-sub" id="todayDate"></div>
+      </div>
+    </div>
+
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-title">Upcoming Appointment</div>
+        <div id="apptBox" class="empty-state">No upcoming appointments.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Latest Doctor-Approved Summary</div>
+        <div id="summaryBox" class="empty-state">No approved consultations yet.</div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Current Prescriptions</div>
+        <div id="rxBox" class="empty-state">No prescriptions on file.</div>
+      </div>
+    </div>
+  </main>
+</div>
+
+<script src="/js/api.js"></script>
+<script>
+Session.requireRole("patient");
+function logout() { Session.clear(); window.location.href = "/login.html"; }
+
+(async function() {
+  const user = Session.user();
+  document.getElementById("patientName").textContent = user.name;
+  document.getElementById("patientInitials").textContent = initials(user.name);
+  document.getElementById("welcomeMsg").textContent = `Welcome back, ${user.name.split(" ")[0]}!`;
+  document.getElementById("todayDate").textContent = new Date().toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" });
+
+  const [patient, appts, consults] = await Promise.all([
+    Api.get(`/patients/${user.id}`),
+    Api.get(`/appointments?patientId=${user.id}`),
+    Api.get(`/consultations?patientId=${user.id}&status=approved`),
+  ]);
+
+  // Upcoming appointment
+  if (appts.length) {
+    const a = appts[0];
+    let doctorName = "Your Doctor";
+    try { doctorName = (await Api.get(`/doctors/${a.doctorId}`)).name; } catch {}
+    document.getElementById("apptBox").innerHTML = `
+      <div style="font-weight:700;">${doctorName}</div>
+      <div class="text-muted" style="font-size:13px; margin-bottom:8px;">${a.type}</div>
+      <div style="font-size:13px;"><b>Date:</b> ${a.date}</div>
+      <div style="font-size:13px; margin-bottom:12px;"><b>Time:</b> ${a.time}</div>
+      <button class="btn btn-primary btn-block">Join Appointment</button>
+    `;
+  }
+
+  // Latest approved consultation
+  if (consults.length) {
+    const c = consults[0];
+    let approverName = "";
+    try { approverName = (await Api.get(`/doctors/${c.doctorId}`)).name; } catch {}
+    document.getElementById("summaryBox").innerHTML = `
+      <span class="badge badge-green" style="margin-bottom:10px; display:inline-block;">✓ Doctor-Approved</span>
+      <div style="font-size:13px;"><b>Consultation:</b> ${fmtDate(c.approvedAt)}</div>
+      <div style="font-size:13px; margin-bottom:10px;"><b>Approved by:</b> ${approverName}</div>
+      <a href="/patient/consultations.html">Review Summary →</a>
+    `;
+  }
+
+  // Current prescriptions
+  if (patient.currentMedications.length) {
+    document.getElementById("rxBox").innerHTML = patient.currentMedications.slice(0, 5).map((m) => `
+      <div style="display:flex; justify-content:space-between; font-size:13px; margin-bottom:8px;">
+        <span>${m.medicine} ${m.dosage}</span><span class="text-muted">${m.frequency}</span>
+      </div>
+    `).join("") + `<a href="/patient/prescriptions.html">View all →</a>`;
+  }
+})();
+</script>
+</body>
+</html>
