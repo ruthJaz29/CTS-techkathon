@@ -1,69 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-<meta charset="UTF-8">
-<title>MedScribe AI — Consultations</title>
-<link rel="stylesheet" href="/css/style.css">
+  <meta charset="UTF-8">
+  <title>MedScribe AI — Consultations</title>
+  <link rel="stylesheet" href="/css/style.css">
 </head>
+
 <body>
-<div class="app-shell">
-  <aside class="sidebar">
-    <div class="brand"><div class="brand-logo">M</div><div>MedScribe AI</div></div>
-    <a class="nav-link" href="/doctor/dashboard.html"><span class="nav-icon">🩺</span>Dashboard</a>
-    <a class="nav-link" href="/doctor/patients.html"><span class="nav-icon">👥</span>Patients</a>
-    <a class="nav-link active" href="/doctor/consultations.html"><span class="nav-icon">📋</span>Consultations</a>
-    <div class="sidebar-footer">
-      <div class="avatar-circle" id="doctorInitials">DV</div>
-      <div><div style="font-weight:600;" id="doctorName">Doctor</div><div class="text-muted" style="font-size:11px;">Signed in</div></div>
-      <button class="logout-btn" onclick="logout()">Log out</button>
-    </div>
-  </aside>
-
-  <main class="main">
-    <div class="topbar">
-      <div>
-        <h1 class="page-title">Consultations</h1>
-        <div class="page-sub">All consultations you've recorded</div>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <div class="brand">
+        <div class="brand-logo">M</div>
+        <div>MedScribe AI</div>
       </div>
-      <a class="btn btn-primary" href="/doctor/dashboard.html">+ New Consultation</a>
-    </div>
+      <a class="nav-link" href="/doctor/dashboard.html"><span class="nav-icon">🩺</span>Dashboard</a>
+      <a class="nav-link" href="/doctor/patients.html"><span class="nav-icon">👥</span>Patients</a>
+      <a class="nav-link active" href="/doctor/consultations.html"><span class="nav-icon">📋</span>Consultations</a>
+      <div class="sidebar-footer">
+        <div class="avatar-circle" id="doctorInitials">DV</div>
+        <div>
+          <div style="font-weight:600;" id="doctorName">Doctor</div>
+          <div class="text-muted" style="font-size:11px;">Signed in</div>
+        </div>
+        <button class="logout-btn" onclick="logout()">Log out</button>
+      </div>
+    </aside>
 
-    <div class="card">
-      <table>
-        <thead><tr><th>Name</th><th>Patient</th><th>Date</th><th>Status</th><th></th></tr></thead>
-        <tbody id="rows"></tbody>
-      </table>
-      <div class="empty-state" id="empty" style="display:none;">No consultations yet — record your first one.</div>
-    </div>
-  </main>
-</div>
+    <main class="main">
+      <div class="topbar">
+        <div>
+          <h1 class="page-title">Consultations</h1>
+          <div class="page-sub">All consultations you've recorded</div>
+        </div>
+        <a class="btn btn-primary" href="/doctor/consultation.html">
+          + New Consultation
+        </a>
+      </div>
 
-<script src="/js/api.js"></script>
-<script>
-Session.requireRole("doctor");
-function logout() { Session.clear(); window.location.href = "/login.html"; }
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Patient</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="rows"></tbody>
+        </table>
+        <div class="empty-state" id="empty" style="display:none;">No consultations yet — record your first one.</div>
+      </div>
+    </main>
+  </div>
 
-const statusBadge = {
-  recording: '<span class="badge badge-gray">Recording</span>',
-  processing: '<span class="badge badge-amber">Processing</span>',
-  pending_review: '<span class="badge badge-amber">Pending Review</span>',
-  approved: '<span class="badge badge-green">Approved</span>',
-  failed: '<span class="badge badge-red">Failed</span>',
-};
+  <script src="/js/api.js"></script>
+  <script>
+    Session.requireRole("doctor");
+    function logout() { Session.clear(); window.location.href = "/login.html"; }
 
-(async function() {
-  const user = Session.user();
-  document.getElementById("doctorName").textContent = user.name;
-  document.getElementById("doctorInitials").textContent = initials(user.name);
+    const statusBadge = {
+      recording: '<span class="badge badge-gray">Recording</span>',
+      processing: '<span class="badge badge-amber">Processing</span>',
+      pending_review: '<span class="badge badge-amber">Pending Review</span>',
+      approved: '<span class="badge badge-green">Approved</span>',
+      failed: '<span class="badge badge-red">Failed</span>',
+    };
 
-  const [consults, patients] = await Promise.all([
-    Api.get(`/consultations?doctorId=${user.id}`),
-    Api.get("/patients"),
-  ]);
-  const patientMap = Object.fromEntries(patients.map((p) => [p.id, p.name]));
+    (async function () {
+      const user = Session.user();
+      document.getElementById("doctorName").textContent = user.name;
+      document.getElementById("doctorInitials").textContent = initials(user.name);
 
-  document.getElementById("empty").style.display = consults.length ? "none" : "block";
-  document.getElementById("rows").innerHTML = consults.map((c) => `
+      const [consults, patients] = await Promise.all([
+        Api.get(`/consultations?doctorId=${user.id}`),
+        Api.get("/patients"),
+      ]);
+      const patientMap = Object.fromEntries(patients.map((p) => [p.id, p.name]));
+
+      document.getElementById("empty").style.display = consults.length ? "none" : "block";
+      document.getElementById("rows").innerHTML = consults.map((c) => `
     <tr>
       <td>${c.name}</td>
       <td>${patientMap[c.patientId] || "Unknown"}</td>
@@ -72,19 +90,20 @@ const statusBadge = {
       <td><a href="#" onclick="viewConsult('${c.id}'); return false;">View</a></td>
     </tr>
   `).join("");
-})();
+    })();
 
-async function viewConsult(id) {
-  const c = await Api.get(`/consultations/${id}`);
-  const soap = c.soap || {};
-  alert(
-    `${c.name}\nStatus: ${c.status}\n\n` +
-    `SUBJECTIVE: ${soap.subjective || "-"}\n\n` +
-    `OBJECTIVE: ${soap.objective || "-"}\n\n` +
-    `ASSESSMENT: ${soap.assessment || "-"}\n\n` +
-    `PLAN: ${soap.plan || "-"}`
-  );
-}
-</script>
+    async function viewConsult(id) {
+      const c = await Api.get(`/consultations/${id}`);
+      const soap = c.soap || {};
+      alert(
+        `${c.name}\nStatus: ${c.status}\n\n` +
+        `SUBJECTIVE: ${soap.subjective || "-"}\n\n` +
+        `OBJECTIVE: ${soap.objective || "-"}\n\n` +
+        `ASSESSMENT: ${soap.assessment || "-"}\n\n` +
+        `PLAN: ${soap.plan || "-"}`
+      );
+    }
+  </script>
 </body>
+
 </html>

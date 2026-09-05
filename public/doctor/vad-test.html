@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>MedScribe — VAD Test</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #f5f7fa;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+
+        .card {
+            background: white;
+            width: 500px;
+            padding: 30px;
+            border-radius: 16px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        #status {
+            margin: 25px 0;
+            padding: 20px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            background: #eee;
+        }
+
+        #status.speech {
+            background: #d1fae5;
+            color: #065f46;
+        }
+
+        #status.silence {
+            background: #f3f4f6;
+            color: #6b7280;
+        }
+
+        button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+        }
+
+        #startBtn {
+            background: #2563eb;
+            color: white;
+        }
+
+        #stopBtn {
+            background: #dc2626;
+            color: white;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        #log {
+            text-align: left;
+            margin-top: 20px;
+            background: #111827;
+            color: #e5e7eb;
+            padding: 15px;
+            border-radius: 8px;
+            height: 150px;
+            overflow-y: auto;
+            font-family: monospace;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="card">
+
+        <h1>🎙️ VAD Test</h1>
+
+        <p>MedScribe Voice Activity Detection</p>
+
+        <div id="status">
+            Microphone not started
+        </div>
+
+        <button id="startBtn">
+            Start Listening
+        </button>
+
+        <button id="stopBtn" disabled>
+            Stop
+        </button>
+
+        <div id="log"></div>
+
+    </div>
+    <script src="/js/api.js"></script>
+    <!-- ONNX Runtime -->
+    <script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.wasm.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/bundle.min.js"></script>
+
+    <script>
+
+        let myVad = null;
+
+        const status = document.getElementById("status");
+        const logBox = document.getElementById("log");
+
+        const startBtn = document.getElementById("startBtn");
+        const stopBtn = document.getElementById("stopBtn");
+
+        let speechSegments = [];
+        let totalSamples = 0;
+
+        let silenceTimer = null;
+        let processing = false;
+        let pendingProcessing = false;
+        let consultationId = null;
+        const SAMPLE_RATE = 16000;
+        const SILENCE_TO_PROCESS_MS = 2000;
+
+
+
+
+        function log(message) {
+
+            const time = new Date().toLocaleTimeString();
+
+            logBox.innerHTML += `[${time}] ${message}<br>`;
+
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+
+        function setStatus(message, type = "") {
+
+            status.textContent = message;
+
+            status.className = "";
+
+            if (type) {
+                status.classList.add(type);
+            }
+        }
+        function encodeWAV(samples, sampleRate = 16000) {
+
+            const buffer = new ArrayBuffer(44 + samples.length * 2);
+            const view = new DataView(buffer);
+
+            function writeString(offset, string) {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            // RIFF header
+            writeString(0, "RIFF");
+
+            view.setUint32(
+                4,
+                36 + samples.length * 2,
+                true
+            );
+
+            writeString(8, "WAVE");
+
+            // fmt chunk
+            writeString(12, "fmt ");
+
+            view.setUint32(16, 16, true);
+
+            // PCM format
+            view.setUint16(20, 1, true);
+
+            // Mono
+            view.setUint16(22, 1, true);
+
+            // Sample rate
+            view.setUint32(24, sampleRate, true);
+
+            // Byte rate
+            view.setUint32(
+                28,
+                sampleRate * 2,
+                true
+            );
+
+            // Block align
+            view.setUint16(32, 2, true);
+
+            // Bits per sample
+            view.setUint16(34, 16, true);
+
+            // data chunk
+            writeString(36, "data");
+
+            view.setUint32(
+                40,
+                samples.length * 2,
+                true
+            );
+
+            // Convert Float32 → Int16
+            let offset = 44;
+
+            for (let i = 0; i < samples.length; i++) {
+
+                const sample = Math.max(
+                    -1,
+                    Math.min(1, samples[i])
+                );
+
+                view.setInt16(
+                    offset,
+                    sample < 0
+                        ? sample * 0x8000
+                        : sample * 0x7FFF,
+                    true
+                );
+
+                offset += 2;
+            }
+
+            return new Blob(
+                [view],
+                { type: "audio/wav" }
+            );
+        }
+
+
+        async function startVAD() {
+
+
+            try {
+
+                log("Initializing VAD...");
+
+                setStatus("Requesting microphone...");
+
+                myVad = await vad.MicVAD.new({
+
+                    onnxWASMBasePath:
+                        "https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/",
+
+                    baseAssetPath:
+                        "https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.30/dist/",
+
+                    onSpeechStart: () => {
+
+                        console.log("Speech started");
+
+                        setStatus("🗣️ SPEECH DETECTED", "speech");
+
+                        log("Speech started");
+
+                    },
+
+                    // onSpeechEnd: (audio) => {
+
+                    //     console.log("Speech ended");
+
+                    //     setStatus("🔇 SILENCE", "silence");
+
+                    //     log(
+                    //         `Speech segment detected — ${audio.length} samples`
+                    //     );
+
+                    // },
+                    onSpeechEnd: (audio) => {
+                        console.log("🛑 Speech ended");
+                        addSpeechSegment(audio);
+                    },
+
+                    onVADMisfire: () => {
+
+                        log("VAD misfire — speech segment too short");
+
+                    }
+
+                });
+
+                await myVad.start();
+
+                startBtn.disabled = true;
+                stopBtn.disabled = false;
+
+                log("VAD started successfully.");
+
+                setStatus("🔇 Listening...", "silence");
+
+            } catch (error) {
+
+                console.error(error);
+
+                log("ERROR: " + error.message);
+
+                setStatus("❌ Failed to start");
+
+            }
+            await createTestConsultation();
+
+        }
+
+
+        async function stopVAD() {
+
+            if (!myVad) return;
+
+            try {
+
+                await myVad.pause();
+
+                await myVad.destroy();
+
+                myVad = null;
+
+                startBtn.disabled = false;
+                stopBtn.disabled = true;
+
+                setStatus("Microphone stopped");
+
+                log("VAD stopped.");
+
+            } catch (error) {
+
+                console.error(error);
+
+                log("Stop error: " + error.message);
+
+            }
+
+        }
+        function addSpeechSegment(audio) {
+
+            if (!audio || audio.length === 0) {
+                log("⚠️ Empty speech segment ignored");
+                return;
+            }
+
+            console.log(
+                `🎙️ Speech segment received: ${audio.length} samples`
+            );
+
+            speechSegments.push(audio);
+            totalSamples += audio.length;
+
+            log(
+                `📦 Segment ${speechSegments.length} added`
+            );
+
+            log(
+                `⏱️ Total speech: ${(totalSamples / SAMPLE_RATE).toFixed(2)} sec`
+            );
+
+            resetSilenceTimer();
+        }
+        function resetSilenceTimer() {
+
+            clearTimeout(silenceTimer);
+
+            silenceTimer = setTimeout(() => {
+
+                if (speechSegments.length === 0) {
+                    return;
+                }
+
+                log("🤫 2 seconds of silence detected");
+
+                processAccumulatedAudio();
+
+            }, SILENCE_TO_PROCESS_MS);
+        }
+
+        function combineSegments() {
+
+            const combined = new Float32Array(totalSamples);
+
+            let offset = 0;
+
+            for (const segment of speechSegments) {
+
+                combined.set(segment, offset);
+
+                offset += segment.length;
+            }
+
+            return combined;
+        }
+        function float32ToWav(float32Array, sampleRate) {
+
+            const buffer = new ArrayBuffer(44 + float32Array.length * 2);
+            const view = new DataView(buffer);
+
+            function writeString(offset, string) {
+
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            }
+
+            writeString(0, "RIFF");
+
+            view.setUint32(
+                4,
+                36 + float32Array.length * 2,
+                true
+            );
+
+            writeString(8, "WAVE");
+            writeString(12, "fmt ");
+
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);
+            view.setUint16(22, 1, true);
+
+            view.setUint32(24, sampleRate, true);
+
+            view.setUint32(
+                28,
+                sampleRate * 2,
+                true
+            );
+
+            view.setUint16(32, 2, true);
+            view.setUint16(34, 16, true);
+
+            writeString(36, "data");
+
+            view.setUint32(
+                40,
+                float32Array.length * 2,
+                true
+            );
+
+            let offset = 44;
+
+            for (let i = 0; i < float32Array.length; i++) {
+
+                let sample = Math.max(
+                    -1,
+                    Math.min(1, float32Array[i])
+                );
+
+                sample = sample < 0
+                    ? sample * 0x8000
+                    : sample * 0x7fff;
+
+                view.setInt16(
+                    offset,
+                    sample,
+                    true
+                );
+
+                offset += 2;
+            }
+
+            return new Blob(
+                [view],
+                { type: "audio/wav" }
+            );
+        }
+        async function processAccumulatedAudio() {
+
+            // If another audio batch is currently being processed,
+            // remember that new audio needs processing.
+            if (processing) {
+                log("⏳ Already processing — queueing new speech...");
+                pendingProcessing = true;
+                return;
+            }
+
+            // Nothing to process
+            if (speechSegments.length === 0) {
+                return;
+            }
+
+            processing = true;
+
+            log("🧠 Preparing accumulated speech...");
+
+            const combinedAudio = combineSegments();
+
+            log(`📦 Combined samples: ${combinedAudio.length}`);
+
+            const wavBlob = float32ToWav(
+                combinedAudio,
+                SAMPLE_RATE
+            );
+
+            log(`🎵 WAV created: ${(wavBlob.size / 1024).toFixed(1)} KB`);
+
+            // Clear the current batch BEFORE sending.
+            // New speech can now safely enter a fresh batch.
+            speechSegments = [];
+            totalSamples = 0;
+
+            try {
+
+                await sendAudioToServer(wavBlob);
+
+                log("✅ Audio sent successfully");
+
+            } catch (error) {
+
+                console.error(error);
+
+                log("❌ Processing failed: " + error.message);
+
+            } finally {
+
+                processing = false;
+
+                // If speech arrived while we were processing,
+                // process that new batch now.
+                if (
+                    pendingProcessing &&
+                    speechSegments.length > 0
+                ) {
+
+                    pendingProcessing = false;
+
+                    log("🔄 Processing queued speech...");
+
+                    setTimeout(() => {
+                        processAccumulatedAudio();
+                    }, 100);
+                }
+            }
+        }
+
+        async function sendAudioToServer(wavBlob) {
+
+            if (!consultationId) {
+                throw new Error("No consultation ID available");
+            }
+
+            const formData = new FormData();
+
+            formData.append(
+                "audio",
+                wavBlob,
+                "consultation.wav"
+            );
+
+            log(`📤 Uploading audio to consultation: ${consultationId}`);
+
+            const response = await fetch(
+                `/api/consultations/${consultationId}/audio`,
+                {
+                    method: "POST",
+                    headers: {
+                        Authorization: `Bearer ${Session.token()}`
+                    },
+                    body: formData
+                }
+            );
+
+            if (!response.ok) {
+                const errorText = await response.text();
+
+                throw new Error(
+                    `Server error ${response.status}: ${errorText}`
+                );
+            }
+
+            return await response.json();
+        }
+
+        async function createTestConsultation() {
+
+            const user = Session.user();
+
+            if (!user) {
+                throw new Error("Please login first");
+            }
+
+            log("👤 Loading patients...");
+
+            const patientsResponse = await fetch("/api/patients", {
+                headers: {
+                    "Authorization": `Bearer ${Session.token()}`
+                }
+            });
+
+            if (!patientsResponse.ok) {
+                throw new Error("Failed to load patients");
+            }
+
+            const patients = await patientsResponse.json();
+
+            if (!patients.length) {
+                throw new Error("No patients available");
+            }
+
+            const patient = patients[0];
+
+            log(`👤 Test patient: ${patient.name}`);
+
+            log("📝 Creating consultation...");
+
+            const response = await fetch("/api/consultations", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "Authorization": `Bearer ${Session.token()}`
+                },
+                body: JSON.stringify({
+                    patientId: patient.id,
+                    doctorId: user.id,
+                    name: "VAD Test Consultation"
+                })
+            });
+
+            if (!response.ok) {
+
+                const errorText = await response.text();
+
+                throw new Error(
+                    `Failed to create consultation: ${errorText}`
+                );
+            }
+
+            const consultation = await response.json();
+
+            consultationId = consultation.id;
+
+            log(`✅ Consultation created: ${consultationId}`);
+
+            return consultation;
+        }
+
+        startBtn.addEventListener("click", startVAD);
+        stopBtn.addEventListener("click", stopVAD);
+
+    </script>
+
+</body>
+
+</html>

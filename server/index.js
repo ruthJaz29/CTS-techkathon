@@ -20,6 +20,8 @@ const apiRoutes = require("./routes");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const https = require("https");
+const fs = require("fs");
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "..", "public")));
@@ -36,7 +38,16 @@ app.get("/api/health", (req, res) => {
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`\nMedScribe AI MVP running at http://localhost:${PORT}`);
-  console.log(`Login page:            http://localhost:${PORT}/login.html\n`);
+const httpsOptions = {
+  key: fs.readFileSync(
+    path.join(__dirname, "..", "cert", "localhost-key.pem")
+  ),
+  cert: fs.readFileSync(
+    path.join(__dirname, "..", "cert", "localhost-cert.pem")
+  ),
+};
+
+https.createServer(httpsOptions, app).listen(PORT, () => {
+  console.log(`\n🔐 MedScribe running at https://localhost:${PORT}`);
+  console.log(`Login page: https://localhost:${PORT}/login.html\n`);
 });

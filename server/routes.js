@@ -25,6 +25,8 @@ const path = require("path");
 const fs = require("fs");
 const { readDb, writeDb, newId } = require("./db");
 const { runAgentPipeline } = require("./geminiService");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { transcribeAudio } = require("./assemblyAIService");
 
 const router = express.Router();
 
@@ -185,29 +187,88 @@ router.post("/consultations/:id/audio", requireAuth, upload.single("audio"), asy
   consult.audioFile = req.file.filename;
   writeDb(db);
 
-  try {
-    const result = await runAgentPipeline({
-      audioFilePath: req.file.path,
-      mimeType: req.file.mimetype || "audio/webm",
-      patient,
-    });
+    try {
+
+    // --------------------------------------------------
+    // STEP 1: Speech-to-Text using AssemblyAI
+    // --------------------------------------------------
+
+    console.log("🎙️ Sending consultation audio to AssemblyAI...");
+
+    const assemblyTranscript =
+      await transcribeAudio(req.file.path);
+
+    console.log("✅ AssemblyAI transcription completed");
+
+    console.log(
+      "Original transcript:",
+      assemblyTranscript.text
+    );
+
+
+    // --------------------------------------------------
+    // STEP 2: Gemini Documentation Agent
+    // --------------------------------------------------
+
+    console.log("🤖 Sending transcript to Gemini...");
+
+    const result =
+      await runAgentPipeline({
+        transcript: assemblyTranscript.text,
+        patient,
+      });
+
+    console.log("✅ Gemini pipeline completed");
+
+
+    // --------------------------------------------------
+    // STEP 3: Save results
+    // --------------------------------------------------
 
     const db2 = readDb();
-    const c2 = db2.consultations.find((c) => c.id === req.params.id);
-    Object.assign(c2, result, { status: "pending_review" });
+
+    const c2 =
+      db2.consultations.find(
+        (c) => c.id === req.params.id
+      );
+
+    Object.assign(
+      c2,
+      result,
+      {
+        status: "pending_review"
+      }
+    );
+
     writeDb(db2);
 
     res.json(c2);
+
   } catch (err) {
-    console.error("AI pipeline failed:", err.message);
+
+    console.error(
+      "❌ AI pipeline failed:",
+      err.message
+    );
+
     const db3 = readDb();
-    const c3 = db3.consultations.find((c) => c.id === req.params.id);
+
+    const c3 =
+      db3.consultations.find(
+        (c) => c.id === req.params.id
+      );
+
     c3.status = "failed";
     c3.error = err.message;
+
     writeDb(db3);
-    res.status(500).json({ error: err.message });
+
+    res.status(500).json({
+      error: err.message
+    });
   }
 });
+
 
 // Step 3: doctor edits the AI draft before approving (SOAP note text
 // and/or the prescription table).
@@ -256,5 +317,58 @@ router.post("/consultations/:id/approve", requireAuth, (req, res) => {
   writeDb(db);
   res.json(consult);
 });
+// =====================================================================
+// ASSEMBLYAI TEST
+// =====================================================================
 
+router.post(
+  "/test-transcribe",
+  requireAuth,
+  upload.single("audio"),
+  async (req, res) => {
+
+    console.log("📥 /test-transcribe called");
+
+    if (!req.file) {
+      console.log("❌ No file received");
+
+      return res.status(400).json({
+        error: "No audio file uploaded"
+      });
+    }
+
+    console.log("📁 File received:");
+    console.log("   path:", req.file.path);
+    console.log("   name:", req.file.originalname);
+    console.log("   type:", req.file.mimetype);
+    console.log("   size:", req.file.size);
+
+    try {
+
+      console.log("🎙️ Sending to AssemblyAI...");
+
+      const transcript =
+        await transcribeAudio(req.file.path);
+
+      console.log("✅ AssemblyAI finished");
+
+      console.log("Transcript:");
+      console.log(transcript.text);
+
+      res.json({
+        success: true,
+        transcript: transcript.text,
+        utterances: transcript.utterances || []
+      });
+
+    } catch (error) {
+
+      console.error("❌ AssemblyAI failed:");
+      console.error(error);
+
+        res.status(500).json({
+    error: err.message
+  });
+}
+});
 module.exports = router;

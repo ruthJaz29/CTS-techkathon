@@ -1,219 +1,409 @@
 /**
  * geminiService.js
- * ------------------------------------------------------------------
- * This file is the "Gemini API - Agent Orchestration" box from our
- * architecture diagram. It implements THREE separate agents, called
- * one after another (an "agent pipeline"). Each agent is just one
- * Gemini API call with a narrow, single-purpose prompt — this is
- * what "Agentic AI" means in practice for this MVP: not one giant
- * prompt, but several small, reviewable, single-responsibility ones.
  *
- *   1. Documentation Agent  -> transcribes the consultation audio AND
- *                              drafts a structured SOAP note + a
- *                              prescription draft, in one call, using
- *                              Gemini's native audio understanding
- *                              (this replaces the separate
- *                              Deepgram/AssemblyAI speech-to-text
- *                              step from the original architecture
- *                              slide — one less moving part for the
- *                              MVP).
- *   2. History Agent        -> reads the patient's stored medical
- *                              history and cross-references it
- *                              against the new SOAP note, surfacing
- *                              anything the doctor should know
- *                              (e.g. a past condition relevant to the
- *                              current complaint).
- *   3. Safety Agent         -> checks the drafted prescription and
- *                              note against the patient's known
- *                              allergies, current medications, and
- *                              for missing/inconsistent information.
+ * Gemini 3.x agent pipeline.
  *
- * The Documentation Agent's draft is NEVER shown to the patient and
- * NEVER auto-saved as final — routes.js always requires an explicit
- * doctor "approve" action before anything becomes part of the
- * patient's record. That's the "Doctor Verification" box in the
- * diagram, implemented in routes.js.
- * ------------------------------------------------------------------
+ * AssemblyAI handles:
+ *   Audio → Speech-to-Text
+ *
+ * Gemini handles:
+ *   Transcript → Documentation
+ *   Documentation → History analysis
+ *   Documentation → Safety analysis
  */
 
-const fs = require("fs");
-const { GoogleGenerativeAI } = require("@google/generative-ai");
+const { GoogleGenAI } = require("@google/genai");
 
-function getModel() {
+
+// ---------------------------------------------------------------
+// Gemini client
+// ---------------------------------------------------------------
+
+function getClient() {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === "your_gemini_api_key_here") {
-    throw new Error(
-      "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
-    );
+
+  if (!apiKey) {
+    throw new Error("GEMINI_API_KEY is not set");
   }
-  const genAI = new GoogleGenerativeAI(apiKey);
-  return genAI.getGenerativeModel({
-    model: process.env.GEMINI_MODEL || "gemini-2.0-flash",
+
+  return new GoogleGenAI({
+    apiKey,
   });
 }
 
-/** Strips accidental markdown fences and parses the model's JSON reply. */
+
+// ---------------------------------------------------------------
+// Parse Gemini JSON response
+// ---------------------------------------------------------------
+
 function parseJson(text) {
-  const cleaned = text.replace(/```json/gi, "").replace(/```/g, "").trim();
-  return JSON.parse(cleaned);
+
+  const cleaned = text
+    .replace(/```json/gi, "")
+    .replace(/```/g, "")
+    .trim();
+
+  try {
+    return JSON.parse(cleaned);
+  } catch (err) {
+
+    console.error("❌ Gemini returned invalid JSON:");
+    console.error(text);
+
+    throw new Error(
+      "Gemini returned invalid JSON"
+    );
+  }
 }
 
-// ---------------------------------------------------------------
-// Agent 1: Documentation Agent
-// ---------------------------------------------------------------
-async function documentationAgent(audioFilePath, mimeType) {
-  const model = getModel();
 
-  const audioBase64 = fs.readFileSync(audioFilePath).toString("base64");
+// ---------------------------------------------------------------
+// Helper: Gemini interaction
+// ---------------------------------------------------------------
+
+async function askGemini(prompt) {
+
+  const ai = getClient();
+
+  const interaction = await ai.interactions.create({
+
+    model:
+      process.env.GEMINI_MODEL ||
+      "gemini-3.6-flash",
+
+    input: prompt,
+  });
+
+  return interaction.output_text;
+}
+
+
+// ===============================================================
+// AGENT 1 — DOCUMENTATION AGENT
+// ===============================================================
+
+async function documentationAgent(transcript) {
+
+  console.log("🤖 Documentation Agent running...");
 
   const prompt = `
-You are the "Documentation Agent" inside a clinical scribe system.
-You will receive an audio recording of a real doctor-patient consultation.
+You are the Documentation Agent inside a clinical medical scribe system.
 
-Do the following:
-1. Transcribe the audio as accurately as possible, labelling speaker turns
-   as "Doctor:" and "Patient:" where you can tell them apart.
-2. From the transcript, draft a structured SOAP note (Subjective,
-   Objective, Assessment, Plan) using standard clinical documentation
-   style.
-3. If the doctor mentions prescribing any medication, draft a
-   prescription list (this is a DRAFT ONLY, to be reviewed by the
-   doctor before it is ever sent to a patient).
+You will receive a transcript of a doctor-patient consultation.
 
-Respond with ONLY valid JSON, no markdown, matching exactly this shape:
+The transcript may contain English, Tamil, or a mixture of both.
+
+Your responsibilities:
+
+1. Convert the entire transcript into clear English.
+2. Preserve the meaning of what was actually said.
+3. Identify Doctor and Patient speaker turns where possible.
+4. Do NOT invent information.
+5. Create a structured SOAP note.
+6. Create a prescription DRAFT only when medication was actually
+   mentioned in the consultation.
+
+IMPORTANT:
+
+- This is documentation assistance, NOT autonomous diagnosis.
+- Do not invent symptoms, diagnoses, medicines, dosages or test results.
+- If something is unclear, explicitly state that it is unclear.
+- Medication suggestions must only come from what the doctor actually
+  mentioned.
+
+Return ONLY valid JSON.
+
+Required format:
+
 {
-  "transcript": "Doctor: ... \\nPatient: ... \\n...",
+  "transcript": "Doctor: ...\\nPatient: ...",
   "soap": {
-    "subjective": "string",
-    "objective": "string",
-    "assessment": "string",
-    "plan": "string"
+    "subjective": "...",
+    "objective": "...",
+    "assessment": "...",
+    "plan": "..."
   },
   "prescriptionDraft": [
-    { "medicine": "string", "dosage": "string", "frequency": "string", "duration": "string", "quantity": "string", "instructions": "string" }
+    {
+      "medicine": "...",
+      "dosage": "...",
+      "frequency": "...",
+      "duration": "...",
+      "quantity": "...",
+      "instructions": "..."
+    }
   ]
 }
-If no medication was discussed, return an empty array for prescriptionDraft.
-If audio is unclear or silent, say so honestly inside the relevant fields
-instead of inventing clinical content.
+
+If no medication was discussed:
+
+"prescriptionDraft": []
+
+Here is the AssemblyAI transcript:
+
+${transcript}
 `;
 
-  const result = await model.generateContent([
-    { inlineData: { mimeType, data: audioBase64 } },
-    { text: prompt },
-  ]);
+  const text = await askGemini(prompt);
 
-  return parseJson(result.response.text());
+  return parseJson(text);
 }
 
-// ---------------------------------------------------------------
-// Agent 2: History Agent
-// ---------------------------------------------------------------
+
+// ===============================================================
+// AGENT 2 — HISTORY AGENT
+// ===============================================================
+
 async function historyAgent(patient, soapNote) {
-  const model = getModel();
+
+  console.log("📚 History Agent running...");
 
   const prompt = `
-You are the "History Agent" inside a clinical scribe system.
-Your job is ONLY to connect today's consultation to the patient's
-existing record — you do not diagnose or treat.
+You are the History Agent inside a clinical medical scribe system.
 
-Patient's stored medical history (most relevant fields only):
+Your ONLY responsibility is to compare today's consultation
+with the patient's existing medical history.
+
+Do NOT diagnose.
+Do NOT prescribe.
+Do NOT invent information.
+
+Patient history:
+
 ${JSON.stringify(
   {
-    allergies: patient.allergies,
-    currentMedications: patient.currentMedications,
-    medicalHistory: patient.medicalHistory,
+    allergies: patient.allergies || [],
+    currentMedications:
+      patient.currentMedications || [],
+    medicalHistory:
+      patient.medicalHistory || [],
   },
   null,
   2
 )}
 
-Today's draft SOAP note:
-${JSON.stringify(soapNote, null, 2)}
+Today's SOAP note:
+
+${JSON.stringify(
+  soapNote,
+  null,
+  2
+)}
 
 Identify:
-1. Any past history entries relevant to today's complaint (quote which
-   ones and why, briefly).
-2. A short one or two sentence "context note" a busy doctor could
-   read in 5 seconds before seeing the patient.
 
-Respond with ONLY valid JSON, no markdown, matching exactly this shape:
+1. Relevant previous medical history.
+2. Relevant allergies or medications.
+3. A very short context note that helps the doctor understand
+   the patient's background.
+
+Return ONLY valid JSON:
+
 {
-  "relevantHistory": ["short string", "short string"],
-  "contextNote": "string"
+  "relevantHistory": [
+    "short explanation"
+  ],
+  "contextNote": "short summary"
 }
-If nothing in the history is relevant, return an empty array and a
-contextNote saying no notable history was found.
+
+If nothing relevant exists:
+
+{
+  "relevantHistory": [],
+  "contextNote": "No notable relevant history found."
+}
 `;
 
-  const result = await model.generateContent(prompt);
-  return parseJson(result.response.text());
+  const text = await askGemini(prompt);
+
+  return parseJson(text);
 }
 
-// ---------------------------------------------------------------
-// Agent 3: Safety Agent
-// ---------------------------------------------------------------
-async function safetyAgent(patient, soapNote, prescriptionDraft) {
-  const model = getModel();
+
+// ===============================================================
+// AGENT 3 — SAFETY AGENT
+// ===============================================================
+
+async function safetyAgent(
+  patient,
+  soapNote,
+  prescriptionDraft
+) {
+
+  console.log("🛡️ Safety Agent running...");
 
   const prompt = `
-You are the "Safety Agent" inside a clinical scribe system. You are a
-final safety net BEFORE a doctor reviews a consultation. You do not
-make clinical decisions — you only flag things a doctor should double
-check.
+You are the Safety Agent inside a clinical medical scribe system.
 
-Patient's known allergies: ${JSON.stringify(patient.allergies)}
-Patient's current medications: ${JSON.stringify(patient.currentMedications)}
+You are a SAFETY CHECKER.
+
+You do NOT make clinical decisions.
+
+Your job is ONLY to identify things that the doctor should
+double-check before approving the consultation.
+
+Known allergies:
+
+${JSON.stringify(
+  patient.allergies || [],
+  null,
+  2
+)}
+
+Current medications:
+
+${JSON.stringify(
+  patient.currentMedications || [],
+  null,
+  2
+)}
 
 Today's SOAP note:
-${JSON.stringify(soapNote, null, 2)}
 
-Today's draft prescription:
-${JSON.stringify(prescriptionDraft, null, 2)}
+${JSON.stringify(
+  soapNote,
+  null,
+  2
+)}
 
-Check for and flag, if present:
-- Any drafted medication that conflicts with a known allergy.
-- Any obvious interaction risk with a current medication.
-- Missing information in the note that is normally expected (e.g. no
-  vital signs recorded, no dosage specified for a drafted medication).
-- Any internal inconsistency between the Subjective/Objective/
-  Assessment/Plan sections.
+Draft prescription:
 
-Respond with ONLY valid JSON, no markdown, matching exactly this shape:
+${JSON.stringify(
+  prescriptionDraft,
+  null,
+  2
+)}
+
+Check for:
+
+- Possible allergy conflicts
+- Obvious medication conflicts
+- Missing dosage information
+- Missing duration
+- Missing important documentation
+- Internal inconsistencies
+- Information that should be verified by the doctor
+
+IMPORTANT:
+
+Do NOT invent risks.
+
+Only flag something when the supplied information
+actually supports the concern.
+
+Return ONLY valid JSON:
+
 {
   "alerts": [
-    { "severity": "high" | "medium" | "low", "type": "string", "message": "string" }
+    {
+      "severity": "high",
+      "type": "string",
+      "message": "string"
+    }
   ]
 }
-If nothing needs flagging, return an empty array. Do not invent risks
-that aren't supported by the data given.
+
+severity must be one of:
+
+high
+medium
+low
+
+If there are no concerns:
+
+{
+  "alerts": []
+}
 `;
 
-  const result = await model.generateContent(prompt);
-  return parseJson(result.response.text());
+  const text = await askGemini(prompt);
+
+  return parseJson(text);
 }
 
-// ---------------------------------------------------------------
-// Orchestrator: runs the 3 agents in sequence, exactly matching the
-// left-to-right flow of the architecture diagram's Gemini box.
-// ---------------------------------------------------------------
-async function runAgentPipeline({ audioFilePath, mimeType, patient }) {
-  const docResult = await documentationAgent(audioFilePath, mimeType);
-  const historyResult = await historyAgent(patient, docResult.soap);
-  const safetyResult = await safetyAgent(
-    patient,
-    docResult.soap,
-    docResult.prescriptionDraft
-  );
+
+// ===============================================================
+// ORCHESTRATOR
+// ===============================================================
+
+async function runAgentPipeline({
+  transcript,
+  patient,
+}) {
+
+  console.log("\n================================");
+  console.log("🚀 GEMINI AGENT PIPELINE START");
+  console.log("================================\n");
+
+
+  // -------------------------------------------------------------
+  // Agent 1
+  // -------------------------------------------------------------
+
+  const documentation =
+    await documentationAgent(transcript);
+
+
+  console.log("✅ Documentation Agent completed");
+
+
+  // -------------------------------------------------------------
+  // Agent 2
+  // -------------------------------------------------------------
+
+  const history =
+    await historyAgent(
+      patient,
+      documentation.soap
+    );
+
+
+  console.log("✅ History Agent completed");
+
+
+  // -------------------------------------------------------------
+  // Agent 3
+  // -------------------------------------------------------------
+
+  const safety =
+    await safetyAgent(
+      patient,
+      documentation.soap,
+      documentation.prescriptionDraft
+    );
+
+
+  console.log("✅ Safety Agent completed");
+
+
+  console.log("\n================================");
+  console.log("🎉 GEMINI AGENT PIPELINE COMPLETE");
+  console.log("================================\n");
+
 
   return {
-    transcript: docResult.transcript,
-    soap: docResult.soap,
-    prescriptionDraft: docResult.prescriptionDraft || [],
-    relevantHistory: historyResult.relevantHistory || [],
-    contextNote: historyResult.contextNote || "",
-    safetyAlerts: safetyResult.alerts || [],
+
+    transcript:
+      documentation.transcript,
+
+    soap:
+      documentation.soap,
+
+    prescriptionDraft:
+      documentation.prescriptionDraft || [],
+
+    relevantHistory:
+      history.relevantHistory || [],
+
+    contextNote:
+      history.contextNote || "",
+
+    safetyAlerts:
+      safety.alerts || [],
   };
 }
 
-module.exports = { runAgentPipeline };
+
+module.exports = {
+  runAgentPipeline,
+};

@@ -21,6 +21,11 @@
       ],
       "currentMedications": [
         {
+          "medicine": "Anti-inflammatory medication",
+          "dosage": "Unspecified",
+          "frequency": "Unspecified"
+        },
+        {
           "medicine": "Lisinopril",
           "dosage": "10mg",
           "frequency": "1 daily"
@@ -37,6 +42,11 @@
         }
       ],
       "medicalHistory": [
+        {
+          "date": "2026-08-31",
+          "note": "Mild ligament strain vs. early inflammation. Rule out fracture.",
+          "consultationId": "cons_74616eeea026"
+        },
         {
           "date": "2023-10-15",
           "note": "Routine checkup. Blood pressure well controlled. No new complaints."
@@ -263,6 +273,386 @@
       ],
       "approvedAt": null,
       "audioFile": "cons_fd13c8897fd8_1787976045430.webm"
+    },
+    {
+      "id": "cons_a84d1f60f2f6",
+      "name": "Chest pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-31T13:22:30.951Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_a84d1f60f2f6_1788182580739.webm",
+      "error": "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
+    },
+    {
+      "id": "cons_e64086a6c743",
+      "name": "Knee pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-31T16:23:28.399Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_e64086a6c743_1788193411944.webm",
+      "error": "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
+    },
+    {
+      "id": "cons_5ca666bfee79",
+      "name": "Knee pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-31T16:24:01.949Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_5ca666bfee79_1788193529234.webm",
+      "error": "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
+    },
+    {
+      "id": "cons_2115f1f1c52b",
+      "name": "Keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-31T16:37:01.025Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_2115f1f1c52b_1788194278677.webm",
+      "error": "GEMINI_API_KEY is not set. Copy .env.example to .env and add your key from https://aistudio.google.com/apikey"
+    },
+    {
+      "id": "cons_7fab09aade7f",
+      "name": "Keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-08-31T16:47:04.303Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_7fab09aade7f_1788194883715.webm",
+      "error": "GoogleGenerativeAI is not defined"
+    },
+    {
+      "id": "cons_74616eeea026",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "approved",
+      "createdAt": "2026-08-31T16:50:59.371Z",
+      "transcript": "Doctor: Please tell me, what is the problem?\nPatient: Doctor, doctor! I have pain/discomfort in my right knee/leg area. It has been very difficult to walk for the past three days.\nDoctor: For three days? Was there any trauma or injury?\nPatient: Doctor, no.\nDoctor: Okay. Are you taking any blood thinners?\nPatient: No, doctor. Nothing.\nDoctor: This looks like a mild ligament strain or early inflammation. I recommend an X-ray to confirm there is no fracture. I will give you some anti-inflammatory medicine. Take rest, apply ice...",
+      "soap": {
+        "subjective": "Patient reports difficulty walking for the past 3 days due to pain in the leg/knee area. Patient denies any history of trauma/injury and denies taking blood thinners.",
+        "objective": "No physical examination findings noted in the transcript. X-ray recommended to rule out fracture.",
+        "assessment": "Mild ligament strain vs. early inflammation. Rule out fracture.",
+        "plan": "1. Perform X-ray to rule out fracture.\n2. Prescribe anti-inflammatory medication.\n3. Rest and ice application advised."
+      },
+      "prescriptionDraft": [
+        {
+          "medicine": "Anti-inflammatory medication",
+          "dosage": "Unspecified",
+          "frequency": "Unspecified",
+          "duration": "Unspecified",
+          "quantity": "Unspecified",
+          "instructions": "Take as directed."
+        }
+      ],
+      "relevantHistory": [
+        "Documented allergy to Aspirin, which is highly relevant as today's plan includes prescribing an anti-inflammatory medication.",
+        "Current medication list confirms no blood thinners (taking Lisinopril, Atorvastatin, and Metformin), aligning with the patient's subjective statement.",
+        "History of Type 2 Diabetes (diagnosed May 2022) managed with Metformin 500mg twice daily."
+      ],
+      "contextNote": "Patient has a history of Type 2 Diabetes and a documented Aspirin allergy; caution is required when selecting an anti-inflammatory medication for today's leg/knee pain treatment plan.",
+      "safetyAlerts": [
+        {
+          "severity": "high",
+          "type": "allergy_conflict",
+          "message": "Patient has a documented allergy to Aspirin. The draft prescription orders an unspecified 'Anti-inflammatory medication', which poses a risk of allergic reaction if an NSAID is prescribed."
+        },
+        {
+          "severity": "high",
+          "type": "missing_prescription_details",
+          "message": "The draft prescription is incomplete and lacks a specific drug name, dosage, frequency, duration, and quantity."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_documentation",
+          "message": "No physical examination findings are documented in the Objective section of the SOAP note."
+        }
+      ],
+      "approvedAt": "2026-08-31T16:58:05.175Z",
+      "audioFile": "cons_74616eeea026_1788195138896.webm"
+    },
+    {
+      "id": "cons_8754504d4cb0",
+      "name": "VAD Test Consultation",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T06:27:04.157Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_a00a59821989",
+      "name": "VAD Test Consultation",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "failed",
+      "createdAt": "2026-09-05T06:30:55.933Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null,
+      "audioFile": "cons_a00a59821989_1788589877278.audio",
+      "error": "transcribeAudio is not defined"
+    },
+    {
+      "id": "cons_648ff7702a20",
+      "name": "VAD Test Consultation",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-09-05T06:33:47.198Z",
+      "transcript": "Doctor: Ma'am, please wait a minute. Let me see how to set it up now. I am checking if the audio is working on the web. No need to look right now.",
+      "soap": {
+        "subjective": "No clinical symptoms, medical history, or patient concerns were discussed in the provided transcript. The recorded audio consists of technical/setup checks.",
+        "objective": "No physical examination findings, vitals, or clinical tests were recorded.",
+        "assessment": "No clinical assessment or diagnosis was performed.",
+        "plan": "No clinical plan or medical interventions were discussed."
+      },
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "No notable relevant history found.",
+      "safetyAlerts": [
+        {
+          "severity": "high",
+          "type": "allergy_conflict",
+          "message": "Patient has a documented allergy to Aspirin, but 'Anti-inflammatory medication' is listed under current medications. Verify the specific drug to prevent potential NSAID cross-reactivity or allergic reaction."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_dosage_information",
+          "message": "Current medication 'Anti-inflammatory medication' is missing dosage and frequency details."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_648ff7702a20_1788590068129.audio"
+    },
+    {
+      "id": "cons_96d1c8309a4c",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-09-05T06:40:57.017Z",
+      "transcript": "Doctor: Hello, tell me what is the problem?\nPatient: Doctor! I have had knee pain for three days. It is very difficult to walk, Doctor.\nDoctor: Three days? Any past trauma or previous issues?\nPatient: No doctor, nothing like that.\nDoctor: Is it very difficult while walking?\nPatient: Yes doctor, it is very difficult while walking.\nDoctor: Are you taking any medications currently?\nPatient: No doctor, nothing.\nDoctor: Okay, no problem. Take rest, apply an ice pack, and avoid over-walking for 3 to 4 days.\nPatient: Okay Doctor, thanks a lot Doctor.",
+      "soap": {
+        "subjective": "Patient presents with knee pain for 3 days. Reports severe difficulty while walking. Denies any history of previous injury/trauma or current medication use.",
+        "objective": "Physical examination details were not explicitly stated in the transcript.",
+        "assessment": "Acute knee pain, aggravated by walking.",
+        "plan": "- Rest\n- Apply ice pack\n- Avoid excessive walking for the next 3-4 days"
+      },
+      "prescriptionDraft": [],
+      "relevantHistory": [
+        "Prior consultation on 2026-08-31 noted mild ligament strain vs. early inflammation, relevant to present knee pain.",
+        "Patient denied current medication use, contradicting records of active medications: an unspecified anti-inflammatory, Lisinopril, Atorvastatin, and Metformin.",
+        "Known allergy to Aspirin."
+      ],
+      "contextNote": "Patient presents with acute knee pain denying previous injury or medication use; however, chart history shows a prior evaluation for ligament strain/inflammation, an active anti-inflammatory prescription, and an Aspirin allergy.",
+      "safetyAlerts": [
+        {
+          "severity": "high",
+          "type": "Inconsistency",
+          "message": "The subjective section states that the patient denies current medication use, which contradicts the current medication list (Lisinopril, Atorvastatin, Metformin, Anti-inflammatory medication)."
+        },
+        {
+          "severity": "medium",
+          "type": "Missing Documentation",
+          "message": "Physical examination findings are missing from the objective section of the SOAP note."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_96d1c8309a4c_1788590554520.webm"
+    },
+    {
+      "id": "cons_71bd8b1bce86",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:19:59.651Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_82883578bbd8",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:20:05.525Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_0252b8c9cfa8",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:22:00.674Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_d89543c6b419",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:24:27.601Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_9eb24b2471d0",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:24:34.789Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_2bee14a39eef",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:26:40.164Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_6208d7218ac9",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "recording",
+      "createdAt": "2026-09-05T07:27:45.896Z",
+      "transcript": null,
+      "soap": null,
+      "prescriptionDraft": [],
+      "relevantHistory": [],
+      "contextNote": "",
+      "safetyAlerts": [],
+      "approvedAt": null
+    },
+    {
+      "id": "cons_a1eca45d6f71",
+      "name": "keen pain",
+      "patientId": "pat1",
+      "doctorId": "doc1",
+      "status": "pending_review",
+      "createdAt": "2026-09-05T07:29:33.592Z",
+      "transcript": "Doctor: Welcome, tell me what is the problem?\nPatient: Doctor, Doctor, my leg has turned blue for three days. It is very difficult to walk, Doctor.\nDoctor: Three days? Is there any old injury? Are you taking any blood thinners or antibiotics?\nPatient: Nothing like that. It is just swollen.\nDoctor: Are you taking any blood thinners or antibiotics...",
+      "soap": {
+        "subjective": "Patient reports blue discoloration (bruising/swelling) on the leg/knee for 3 days, causing severe difficulty walking. Patient denies any old injuries and denies taking blood thinners or antibiotics.",
+        "objective": "No physical exam findings, vital signs, or test results were documented in the transcript.",
+        "assessment": "Leg/knee swelling and blue discoloration for 3 days with difficulty walking. Etiology is unclear from the available transcript.",
+        "plan": "Further clinical evaluation required. No medications, investigations, or specific treatment plans were discussed in the transcript."
+      },
+      "prescriptionDraft": [],
+      "relevantHistory": [
+        "Prior consultation on 2026-08-31 noted mild ligament strain vs. early inflammation (rule out fracture), relevant to current leg/knee complaints.",
+        "Patient is currently prescribed an unspecified anti-inflammatory medication and has a documented allergy to Aspirin."
+      ],
+      "contextNote": "Patient presenting with acute leg/knee swelling and discoloration has a recent history of mild ligament strain/inflammation evaluation and current anti-inflammatory medication use.",
+      "safetyAlerts": [
+        {
+          "severity": "high",
+          "type": "allergy_conflict",
+          "message": "Patient has a documented Aspirin allergy and is listed as taking an unspecified 'Anti-inflammatory medication'. The exact medication should be verified to rule out NSAID/Aspirin cross-reactivity, particularly in the context of unexplained bruising."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_dosage_information",
+          "message": "Current medication list includes 'Anti-inflammatory medication' with unspecified dosage and frequency."
+        },
+        {
+          "severity": "medium",
+          "type": "missing_documentation",
+          "message": "Objective findings, including vital signs and physical exam of the affected leg/knee, are missing from the SOAP note for an acute presentation of leg swelling, discoloration, and difficulty walking."
+        }
+      ],
+      "approvedAt": null,
+      "audioFile": "cons_a1eca45d6f71_1788593470206.audio"
     }
   ]
 }
